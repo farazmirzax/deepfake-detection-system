@@ -1,8 +1,8 @@
 # --- Deepfake Project GitIgnore ---
 
 # 1. Ignore the massive Datasets
-dataset/
-dataset/*
+#dataset/
+#dataset/*
 
 # 2. Ignore heavy trained models
 *.pth
