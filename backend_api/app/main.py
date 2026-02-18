@@ -15,7 +15,7 @@ try:
     MEDIAPIPE_AVAILABLE = True
 except ImportError:
     MEDIAPIPE_AVAILABLE = False
-    print("⚠️ MediaPipe not found. 'Sherlock' Face Geometry scanner will be skipped.")
+    print("⚠️ MediaPipe not found. 'Prism' Face Geometry scanner will be skipped.")
 
 # --- 1. SETUP APP ---
 app = FastAPI(title="Deepfake Detective (CSI Edition)")
@@ -45,8 +45,8 @@ except Exception as e:
     detector_swap = None
     detector_gen = None
 
-# --- 3. THE NEW AGENT: SHERLOCK (Forensics) 🕵️‍♂️ ---
-class SherlockAgent:
+# --- 3. THE NEW AGENT: PRISM (Forensics) 🔬 ---
+class PrismAgent:
     @staticmethod
     def scan_metadata(image: Image.Image):
         """Looks for 'Photoshop' or editing software in hidden tags"""
@@ -125,7 +125,7 @@ class SherlockAgent:
                 else:
                     logs.append("Geometry: Face structure verified (Eyes/Nose/Mouth alignment valid).")
         except Exception as e:
-            print(f"Sherlock Geometry Error: {e}")
+            print(f"Prism Geometry Error: {e}")
             pass
             
         return logs
@@ -150,7 +150,7 @@ class VideoRequest(BaseModel):
 async def scan_image(file: UploadFile = File(...)):
     print(f"📸 Agent received image: {file.filename}")
     
-    # Save temp file for Sherlock
+    # Save temp file for Prism
     temp_filename = f"temp_{file.filename}"
     with open(temp_filename, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -168,11 +168,11 @@ async def scan_image(file: UploadFile = File(...)):
         else:
             score_swap, score_gen = 0.5, 0.5 # Fail safe
 
-        # --- PHASE 2: SHERLOCK FORENSICS ---
-        sherlock_logs = []
-        sherlock_logs.extend(SherlockAgent.scan_metadata(image))
-        sherlock_logs.extend(SherlockAgent.scan_ela(image))
-        sherlock_logs.extend(SherlockAgent.scan_face_geometry(temp_filename))
+        # --- PHASE 2: PRISM FORENSICS ---
+        prism_logs = []
+        prism_logs.extend(PrismAgent.scan_metadata(image))
+        prism_logs.extend(PrismAgent.scan_ela(image))
+        prism_logs.extend(PrismAgent.scan_face_geometry(temp_filename))
 
         # --- PHASE 3: VERDICT LOGIC ---
         final_score = max(score_swap, score_gen) * 100
@@ -195,8 +195,8 @@ async def scan_image(file: UploadFile = File(...)):
         else:
              report_lines.append(f"• CLEAN: AI models found no manipulation traces.")
 
-        # 2. The Forensics (Sherlock)
-        for log in sherlock_logs:
+        # 2. The Forensics (Prism)
+        for log in prism_logs:
             report_lines.append(f"• {log}")
 
         # Join into a single string for the frontend

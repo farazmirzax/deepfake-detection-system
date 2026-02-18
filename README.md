@@ -26,7 +26,7 @@ Deepfake Detective is an advanced detection system that combines multiple AI mod
 - **MAX Confidence Logic**: Trusts the most suspicious prediction to cover blind spots
 - **Complementary Detection**: One model specializes in face swaps, the other in AI-generated content
 
-### 🔬 **Sherlock Forensic Engine**
+### 🔬 **Prism Forensic Engine**
 Goes beyond black-box AI by inspecting the digital DNA of files:
 - **EXIF/Metadata Extraction**: Detects traces of editing software (Photoshop, GIMP, Adobe)
 - **Error Level Analysis (ELA)**: Calculates compression anomalies to identify spliced pixels
@@ -54,7 +54,7 @@ The system employs a **triple-agent approach** where each component specializes 
 - **Target**: Fully synthetic faces, GANs, AI-generated textures
 - **Model**: [`dima806/deepfake_vs_real_image_detection`](https://huggingface.co/dima806/deepfake_vs_real_image_detection)
 
-### 3. **Sherlock (The Forensic Analyst)**
+### 3. **Prism (The Forensic Analyst)**
 - **Role**: Digital Forensics Expert
 - **Methods**: 
   - Metadata inspection for software signatures
