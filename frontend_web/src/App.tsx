@@ -11,7 +11,6 @@ interface AnalysisResult {
 }
 
 function App() {
-  // State with strict types
   const [activeTab, setActiveTab] = useState<'image' | 'video'>('image');
   const [url, setUrl] = useState<string>('');
   const [preview, setPreview] = useState<string | null>(null);
@@ -36,7 +35,6 @@ function App() {
     formData.append('file', selectedFile);
 
     try {
-      // Send to Python Backend
       const response = await axios.post<AnalysisResult>('http://127.0.0.1:8000/scan-image/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -58,7 +56,6 @@ function App() {
     setError(null);
 
     try {
-      // Send Link to Python Agent
       const response = await axios.post<AnalysisResult>('http://127.0.0.1:8000/scan-video/', { url });
       setResult(response.data);
     } catch (err) {
@@ -67,6 +64,40 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // --- 3. FORENSIC LOG FORMATTER (The "CSI" Magic) ---
+  const formatAnalysisLine = (line: string, index: number) => {
+    // Remove backend bullet points so we can style it ourselves
+    const cleanLine = line.replace('•', '').trim();
+    if (!cleanLine) return null;
+
+    // Smart color coding based on keywords
+    let colorClass = "text-gray-300"; // Default
+    if (cleanLine.includes("CRITICAL") || cleanLine.includes("⚠️")) {
+      colorClass = "text-red-400 font-semibold";
+    } else if (cleanLine.includes("CLEAN")) {
+      colorClass = "text-green-400 font-semibold";
+    } else if (cleanLine.includes("Metadata")) {
+      colorClass = "text-blue-300";
+    } else if (cleanLine.includes("Geometry")) {
+      colorClass = "text-purple-300";
+    } else if (cleanLine.includes("FORENSIC FLAG")) {
+      colorClass = "text-orange-400";
+    }
+
+    return (
+      <motion.div 
+        key={index}
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: index * 0.15 + 0.2 }} // Staggered terminal effect
+        className={`flex items-start text-sm font-mono mb-2 ${colorClass}`}
+      >
+        <span className="text-cyber-neon mr-3 shrink-0 mt-0.5">{'>'}</span>
+        <span className="leading-relaxed">{cleanLine}</span>
+      </motion.div>
+    );
   };
 
   return (
@@ -89,7 +120,7 @@ function App() {
         </div>
         <div className="flex items-center justify-center gap-2 text-cyber-neon/60 text-sm tracking-[0.3em]">
           <Terminal size={14} />
-          <span>SYSTEM ONLINE // AGENT V1.0</span>
+          <span>SYSTEM ONLINE // AGENT V2.0</span>
         </div>
       </motion.div>
 
@@ -118,8 +149,8 @@ function App() {
           {loading && (
             <div className="absolute inset-0 z-50 bg-black/90 flex flex-col items-center justify-center">
               <Loader2 className="w-16 h-16 text-cyber-neon animate-spin mb-6" />
-              <p className="text-cyber-neon font-bold tracking-widest animate-pulse">ANALYZING ARTIFACTS...</p>
-              <p className="text-xs text-gray-500 mt-2">Connecting to Neural Network...</p>
+              <p className="text-cyber-neon font-bold tracking-widest animate-pulse">EXTRACTING FORENSICS...</p>
+              <p className="text-xs text-gray-500 mt-2">Running ELA & Metadata Scans...</p>
             </div>
           )}
 
@@ -214,15 +245,17 @@ function App() {
                 </div>
               </div>
               
-              {/* Analysis Log */}
-              <div className="bg-black/40 p-6 border-t border-white/5">
-                <div className="flex gap-2 mb-2 text-cyber-neon/80 text-xs font-bold tracking-widest uppercase">
-                  <Terminal size={12} /> Analysis Log
+              {/* NEW FORENSIC TERMINAL LOG */}
+              <div className="bg-black/60 p-6 border-t border-white/5">
+                <div className="flex gap-2 mb-4 text-cyber-neon/80 text-xs font-bold tracking-widest uppercase border-b border-white/10 pb-2">
+                  <Terminal size={14} /> FORENSIC DIAGNOSTICS LOG
                 </div>
-                <p className="text-gray-300 leading-relaxed font-mono text-sm">
-                  <span className="text-cyber-neon mr-2">{'>'}</span>
-                  {result.analysis}
-                </p>
+                
+                {/* Parse and render the multi-line backend string */}
+                <div className="flex flex-col">
+                  {result.analysis.split('\n').map((line, idx) => formatAnalysisLine(line, idx))}
+                </div>
+
               </div>
             </motion.div>
           )}
