@@ -126,9 +126,21 @@ function App() {
           {activeTab === 'image' ? (
             <div className="w-full h-full flex flex-col items-center justify-center p-8">
               {preview ? (
-                <div className="relative group w-full flex justify-center">
-                  <img src={preview} alt="Upload" className="max-h-64 rounded-lg shadow-lg border border-gray-600 group-hover:border-cyber-neon transition-all" />
-                  <div className="absolute bottom-4 bg-black/70 px-4 py-1 rounded-full text-xs text-white backdrop-blur-md border border-white/10">PREVIEW</div>
+                <div className="w-full flex flex-col items-center gap-4">
+                  <div className="relative group w-full flex justify-center">
+                    <img src={preview} alt="Upload" className="max-h-64 rounded-lg shadow-lg border border-gray-600 group-hover:border-cyber-neon transition-all" />
+                    <div className="absolute bottom-4 bg-black/70 px-4 py-1 rounded-full text-xs text-white backdrop-blur-md border border-white/10">PREVIEW</div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setPreview(null);
+                      setResult(null);
+                      setError(null);
+                    }}
+                    className="px-6 py-2 bg-gray-800 hover:bg-cyber-neon hover:text-black text-white rounded-lg border border-gray-600 font-bold tracking-wider transition-all duration-300 cursor-pointer flex items-center gap-2"
+                  >
+                    <Upload size={16} /> UPLOAD ANOTHER IMAGE
+                  </button>
                 </div>
               ) : (
                 <label className="cursor-pointer flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
