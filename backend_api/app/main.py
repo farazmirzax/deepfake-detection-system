@@ -97,14 +97,15 @@ class PrismAgent:
 
     @staticmethod
     def scan_face_geometry(image_path: str):
-        """Uses MediaPipe to check if a face actually exists"""
+        """Uses MediaPipe to check if a face actually exists, with OpenCV Fallback"""
         if not MEDIAPIPE_AVAILABLE:
             return []
-        
+            
         logs = []
         try:
-            # 👇 THE FIX: Direct import path that bypasses the Windows glitch 👇
-            from mediapipe.python.solutions import face_mesh as mp_face_mesh
+            # ATTEMPT 1: Try Google MediaPipe (Primary Scanner)
+            import mediapipe as mp
+            mp_face_mesh = mp.solutions.face_mesh
             import cv2
             
             with mp_face_mesh.FaceMesh(
@@ -117,16 +118,32 @@ class PrismAgent:
                 img = cv2.imread(image_path)
                 if img is None: return []
                 
-                # Scan the face
                 results = face_mesh.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
                 
                 if not results.multi_face_landmarks:
                     logs.append("⚠️ GEOMETRY FLAG: No human face detected (or face is obscured).")
                 else:
                     logs.append("Geometry: Face structure verified (Eyes/Nose/Mouth alignment valid).")
+                    
         except Exception as e:
-            print(f"Prism Geometry Error: {e}")
-            pass
+            # ATTEMPT 2: Fallback to OpenCV Haar Cascades (Backup Scanner)
+            # If MediaPipe crashes on Windows, Prism automatically uses this instead!
+            try:
+                import cv2
+                img = cv2.imread(image_path)
+                if img is None: return []
+                
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                # Load the classic OpenCV face detector
+                face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+                faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+                
+                if len(faces) == 0:
+                    logs.append("⚠️ GEOMETRY FLAG: No face detected (OpenCV Backup Scanner).")
+                else:
+                    logs.append("Geometry: Face spatial boundaries verified (OpenCV Backup Scanner).")
+            except Exception as cv_e:
+                print(f"Prism Engine Critical Geometry Error: {cv_e}")
             
         return logs
 
