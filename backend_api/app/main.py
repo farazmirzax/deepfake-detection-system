@@ -34,10 +34,15 @@ try:
     # AGENT A: Swap Hunter
     print("   ...Waking up Vigilante-V2...")
     detector_swap = pipeline("image-classification", model="ashish-001/deepfake-detection-using-ViT")
+    # DEBUG: Print the model's actual label mapping
+    if hasattr(detector_swap.model, 'config') and hasattr(detector_swap.model.config, 'id2label'):
+        print(f"   📋 Vigilante-V2 Label Map: {detector_swap.model.config.id2label}")
     
     # AGENT B: GenAI Hunter
     print("   ...Waking up Sentinel-X...")
     detector_gen = pipeline("image-classification", model="dima806/deepfake_vs_real_image_detection")
+    if hasattr(detector_gen.model, 'config') and hasattr(detector_gen.model.config, 'id2label'):
+        print(f"   📋 Sentinel-X Label Map: {detector_gen.model.config.id2label}")
     
     print("✅ Full Team Active!")
 except Exception as e:
@@ -148,16 +153,34 @@ class PrismAgent:
         return logs
 
 # --- HELPER: NORMALIZE SCORES ---
-def get_fake_probability(predictions):
+def get_fake_probability(predictions, model_name="Unknown"):
+    """Extracts the 'fake' probability from model predictions"""
+    # DEBUG: Print raw output so we can see what labels the models actually use
+    print(f"   🔍 {model_name} RAW OUTPUT: {predictions}")
+    
     fake_score = 0.0
+    real_score = 0.0
+    
     for pred in predictions:
         label = pred['label'].lower()
         score = pred['score']
-        if label in ['fake', 'deepfake', 'artificial', 'label_1']:
+        
+        # Check for FAKE labels
+        if label in ['fake', 'deepfake', 'artificial', 'label_0', 'ai']:
             fake_score = score
-        elif label in ['real', 'natural', 'label_0']:
-            if fake_score == 0: fake_score = 1.0 - score
-    return fake_score
+        
+        # Check for REAL labels
+        elif label in ['real', 'natural', 'label_1', 'human']:
+            real_score = score
+    
+    # If we found a direct fake score, use it
+    if fake_score > 0:
+        return fake_score
+    # Otherwise derive from real score
+    if real_score > 0:
+        return 1.0 - real_score
+    
+    return 0.5  # Unknown labels fallback
 
 class VideoRequest(BaseModel):
     url: str
@@ -180,8 +203,8 @@ async def scan_image(file: UploadFile = File(...)):
         if detector_swap and detector_gen:
             preds_swap = detector_swap(image)
             preds_gen = detector_gen(image)
-            score_swap = get_fake_probability(preds_swap)
-            score_gen = get_fake_probability(preds_gen)
+            score_swap = get_fake_probability(preds_swap, "Vigilante-V2")
+            score_gen = get_fake_probability(preds_gen, "Sentinel-X")
         else:
             score_swap, score_gen = 0.5, 0.5 # Fail safe
 
@@ -191,8 +214,25 @@ async def scan_image(file: UploadFile = File(...)):
         prism_logs.extend(PrismAgent.scan_ela(image))
         prism_logs.extend(PrismAgent.scan_face_geometry(temp_filename))
 
-        # --- PHASE 3: VERDICT LOGIC ---
-        final_score = max(score_swap, score_gen) * 100
+        # --- PHASE 3: VERDICT LOGIC (Weighted Ensemble) ---
+        # Weights: Vigilante (40%), Sentinel (40%), Forensic ELA (20%)
+        
+        # Calculate ELA risk score (0.0 to 1.0) based on max_diff
+        ela_risk = 0.0
+        # We assume max_diff > 15 is suspicious. Let's cap it at 50 for 100% risk.
+        ela_value = PrismAgent.scan_ela(image) # Note: We need to refactor scan_ela to return value, not just string.
+        # actually, let's keep it simple and just weigh the AI models for now to avoid rewriting the Prism class.
+        
+        # Simple Weighted Logic for Phase 1:
+        # If either model is VERY confident (>90%), we trust it completely (Security Override).
+        # Otherwise, we take a weighted average to reduce false positives.
+        
+        if score_swap > 0.9 or score_gen > 0.9:
+            final_score = max(score_swap, score_gen) * 100
+        else:
+            # Weighted Average: 50% Swap, 50% GenAI
+            final_score = ((score_swap * 0.5) + (score_gen * 0.5)) * 100
+            
         verdict = "FAKE" if final_score > 50 else "REAL"
         
         # Display Score Logic

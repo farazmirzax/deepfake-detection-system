@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Upload, Link, AlertTriangle, CheckCircle, Loader2, ScanLine, Terminal } from 'lucide-react';
+import { Shield, Upload, Link, AlertTriangle, CheckCircle, ScanLine, Terminal } from 'lucide-react';
+import ForensicScanner from './components/ForensicScanner';
 
 // --- TYPE DEFINITIONS ---
 interface AnalysisResult {
@@ -143,16 +144,11 @@ function App() {
           </button>
         </div>
 
+        {/* FORENSIC SCANNER OVERLAY — covers the entire card */}
+        {loading && <ForensicScanner imageUrl={preview} />}
+
         {/* INPUT ZONE */}
         <div className="min-h-[250px] flex flex-col items-center justify-center border-2 border-dashed border-gray-700 rounded-xl bg-black/40 relative overflow-hidden transition-colors hover:border-cyber-neon/50 group">
-          
-          {loading && (
-            <div className="absolute inset-0 z-50 bg-black/90 flex flex-col items-center justify-center">
-              <Loader2 className="w-16 h-16 text-cyber-neon animate-spin mb-6" />
-              <p className="text-cyber-neon font-bold tracking-widest animate-pulse">EXTRACTING FORENSICS...</p>
-              <p className="text-xs text-gray-500 mt-2">Running ELA & Metadata Scans...</p>
-            </div>
-          )}
 
           {activeTab === 'image' ? (
             <div className="w-full h-full flex flex-col items-center justify-center p-8">
